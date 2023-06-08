@@ -1,0 +1,4 @@
+# 指定当前项目环境
+spring:
+  profiles:
+    active: test

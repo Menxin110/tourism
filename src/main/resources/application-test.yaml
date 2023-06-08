@@ -1,0 +1,55 @@
+spring:
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/tourism_data?useSSL=false&serverTimezone=UTC&rewriteBatchedStatements=true
+    password: 123456
+    username: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    #  默认使用hikari数据源，如果不自定义数据源，可以不用指定
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      # 打开关于spring监控功能
+      aop-patterns: com.springboot.tourism.*
+      stat-view-servlet:
+        # 开启监控页功能
+        enabled: true
+        # 开启登录验证
+        login-password: 123456
+        login-username: admin
+        # 取消重置按钮
+        reset-enable: false
+      web-stat-filter:
+        # 开启web监控配置
+        enabled: true
+        # 拦截路径
+        url-pattern: /*
+        # 放行路径
+        exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*"
+      filter:
+        # 打开druid的监控统计功能
+        stat:
+          enabled: true
+          # 规定超过1000毫秒的都是慢查询
+          slow-sql-millis: 1000
+        # wall 打开防火墙功能
+        wall:
+          enabled: true
+
+  # sql语句执行时间超过1秒算超时
+  jdbc:
+    template:
+      query-timeout: 1
+
+
+mybatis-plus:
+  configuration:
+    # 配置MyBatis-plus日志功能
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      # 配置MyBatis-Plus操作表的默认前缀
+      table-prefix: t_
+      # 配置MyBatis-Plus的主键策略为自增主键
+      id-type: auto
+  # 配置扫描通用枚举
+  type-enums-package: com.springboot.tourism.enums
