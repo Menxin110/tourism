@@ -39,7 +39,12 @@ spring:
   jdbc:
     template:
       query-timeout: 1
-
+#  # rabbitmq配置
+#  rabbitmq:
+#    host: 192.168.110.141
+#    port: 5672
+#    username: admin
+#    password: 12345678Aa
 
 mybatis-plus:
   configuration:

@@ -1,7 +1,8 @@
-package com.springboot.tourism.service.impl;
+package com.springboot.tourism.security.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.springboot.tourism.mapper.UserMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
@@ -19,6 +20,7 @@ import java.util.List;
  * @version 菜鸟
  */
 
+@Slf4j
 @Service
 public class MyUserDetailsService implements UserDetailsService {
 
@@ -29,6 +31,7 @@ public class MyUserDetailsService implements UserDetailsService {
     // 在此去根据username，查询数据库，在逻辑正确后，包装security中的User后返回
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        log.info("登入的用户名" + username);
 
         QueryWrapper<com.springboot.tourism.pojo.User>  queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("username", username);

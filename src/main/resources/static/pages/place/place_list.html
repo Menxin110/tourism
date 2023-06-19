@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>景点管理</title>
+		<!--		<script src="../../lib/jquery-3.4.1/jquery-3.4.1.js"></script>-->
+		<link rel="stylesheet" href="../../lib/element2.13.0/lib-master/theme-chalk/index.css" />
+		<script src="../../lib/vue/vue.js" type="text/javascript" charset="utf-8"></script>
+		<!--		<script src="../lib/layer/layer.js"></script>-->
+		<script src="../../lib/element2.13.0/lib-master/index.js"></script>
+		<script src="../../lib/axios/dist/axios.js"></script>
+	</head>
+	<body>
+		<div id="table">
+			<el-card class="box-card">
+				<el-button type="success" plain @click="handleAdd()">新增省份</el-button>
+				<template>
+					<el-select v-model="formData.provinceId" placeholder="请选择省份">
+						<el-option
+								v-for="item in options"
+								:key="item.value"
+								:label="item.label"
+								:value="item.value">
+						</el-option>
+					</el-select>
+				</template>
+				<el-button type="warning" round>查询相关省份景点</el-button>
+				<template>
+					<el-table :data="tableData" height="450" border style="width: 100%">
+<!--						<el-table-column type="index" prop="name" label="景点名" align="center" width="50">-->
+<!--						</el-table-column>-->
+						<el-table-column prop="name" label="景点名" align="center" width="60">
+						</el-table-column>
+
+						<el-table-column prop="pic" label="景点图片" align="center">
+<!--							@click="down(scope.row)"-->
+							<template slot-scope="scope">
+								<el-image :src="'http://localhost:8080/img/'+scope.row.pic" class="image"></el-image>
+							</template>
+						</el-table-column>
+
+						<el-table-column prop="hotTime" label="旺季日期" align="center" width="100">
+						</el-table-column>
+						<el-table-column prop="hotTicket" label="旺季门票" width="70">
+						</el-table-column>
+						<el-table-column prop="dimTicket" label="淡季门票" width="70">
+						</el-table-column>
+						<el-table-column prop="placeDes" label="景点描述">
+						</el-table-column>
+						<el-table-column fixed="right" align="center" label="操作" width="200">
+							<template slot-scope="scope">
+								<el-button type="primary" @click="dialogTableVisible = true" icon="el-icon-view" circle size="mini"></el-button>
+								<el-button type="success" icon="el-icon-edit" circle size="mini"></el-button>
+								<el-button type="danger" icon="el-icon-delete" circle size="mini"></el-button>
+							</template>
+						</el-table-column>
+					</el-table>
+				</template>
+
+				<!-- 分页 -->
+				<div class="block" style="margin-top: 20px;">
+					<!--					:page-sizes="[100, 200, 300, 400]"-->
+					<el-pagination
+							class="pagiantion"
+
+							:page-sizes="[100, 200, 300, 400]"
+							background @size-change="handleSizeChange"
+							@current-change="handleCurrentChange"
+							:current-page="pagination.currentPage"
+							:page-size="pagination.pageSize"
+							layout="total, prev, pager, next, jumper"
+							:total="pagination.total"
+					>
+
+					</el-pagination>
+				</div>
+			</el-card>
+
+
+			<!-- 新增标签弹层 -->
+			<div class="add-form">
+				<el-dialog title="新增省份" :visible.sync="insertFormVisible">
+					<el-form ref="dataAddForm" :model="formData" :rules="rules" label-position="right"
+							 label-width="100px">
+
+						<el-row>
+							<el-col :span="36">
+								<el-form-item label="景点" prop="name">
+									<el-input v-model="formData.name" placeholder="请输入景点"></el-input>
+								</el-form-item>
+							</el-col>
+						</el-row>
+
+						<el-row>
+							<el-col :span="36">
+								<el-form-item label="景点图片" prop="pic">
+<!--									v-model="formData.pic"-->
+									<el-upload
+											action=""
+											list-type="picture-card"
+											:on-preview="handlePictureCardPreview"
+											:on-remove="handleRemove"
+
+											:name="pic"
+											:limit="1"
+
+											:auto-upload="false"
+											:before-upload="filesize"
+											:on-change="formDataPic"
+									>
+										<i class="el-icon-plus"></i>
+									</el-upload>
+									<el-dialog :visible.sync="dialogVisible">
+										<img width="100%" :src="dialogImageUrl" alt="">
+									</el-dialog>
+								</el-form-item>
+							</el-col>
+						</el-row>
+
+						<el-row>
+							<el-col :span="20">
+								<el-form-item label="旺季时间" prop="name">
+									<el-date-picker
+											v-model="formData.hotTime"
+											type="date"
+											placeholder="选择日期">
+									</el-date-picker>
+								</el-form-item>
+							</el-col>
+						</el-row>
+
+						<el-row>
+							<el-col :span="20">
+								<el-form-item label="旺季门票" prop="name">
+									<el-input v-model="formData.hotTicket" placeholder="请输入价格"></el-input>
+								</el-form-item>
+							</el-col>
+							<el-col :span="20">
+								<el-form-item label="淡季门票" prop="name">
+									<el-input v-model="formData.dimTicket" placeholder="请输入价格"></el-input>
+								</el-form-item>
+							</el-col>
+						</el-row>
+
+						<el-row>
+							<el-col :span="60">
+								<el-form-item label="标签" prop="placeDes">
+									<el-input
+											type="textarea"
+											:rows="2"
+											placeholder="请输入景点相关内容"
+											v-model="formData.placeDes">
+									</el-input>
+								</el-form-item>
+							</el-col>
+						</el-row>
+						<el-row>
+							<el-col :span="60">
+								<el-form-item label="省份" prop="province">
+									<template>
+										<el-select v-model="formData.provinceId" placeholder="请选择省份">
+											<el-option
+													v-for="item in options"
+													:key="item.value"
+													:label="item.label"
+													:value="item.value">
+											</el-option>
+										</el-select>
+									</template>
+								</el-form-item>
+							</el-col>
+						</el-row>
+					</el-form>
+
+					<div slot="footer" class="dialog-footer">
+						<el-button @click="cancel()">取消</el-button>
+						<el-button type="primary" @click="save()">确定</el-button>
+					</div>
+				</el-dialog>
+			</div>
+
+			<!-- 弹窗 -->
+			<el-dialog title="收货地址" :visible.sync="dialogTableVisible">
+				<el-table :data="tableData">
+					<el-table-column property="date" label="日期" width="150"></el-table-column>
+					<el-table-column property="name" label="姓名" width="200"></el-table-column>
+					<el-table-column property="address" label="地址"></el-table-column>
+				</el-table>
+			</el-dialog>
+		</div>
+	</body>
+	<script>
+		var vm = new Vue({
+			el: "#table",
+			data: {
+				currentPage: 1,
+				dialogTableVisible: false,
+				insertFormVisible: false,//添加表单是否可见
+				// 图片上传
+				dialogImageUrl: '',
+				dialogVisible: false,
+				options: [
+							{
+						value: '选项1',
+						label: '黄金糕'
+					}
+				],
+				formData: {},
+				tableData: [],
+				pagination: {//分页相关模型数据
+					currentPage: 1,//当前页码
+					pageSize: 4,//每页显示的记录数
+					total: 0,//总记录数
+					name: "",
+					hotTime: "",
+					hotTicket: "",
+					dimTicket: "",
+					placeDes: "",
+				},
+			},
+			//钩子函数，VUE对象初始化完成后自动执行
+			created() {
+				this.getAll();
+				this.getAllProvince();
+			},
+			methods: {
+
+				// 获取所有的省份
+				getAllProvince(){
+
+					axios.get("/province").then((res) =>{
+						console.log(res);
+						this.options = res.data.content;
+						console.log("执行结束");
+					});
+				},
+				//列表
+				getAll() {
+					//组织参数，拼接url请求地址
+					// param = "?id=" + this.pagination.id+ "&name=" + this.pagination.name+"&phone="+this.pagination.phone;
+					axios.get("/place/page?pageNum=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize + "&provinceId=" + 1).then((res)=>{
+						console.log(res);
+
+						this.pagination.pageSize = res.data.content.size;
+						this.pagination.currentPage = res.data.content.current;
+						this.pagination.total = res.data.content.total;
+						console.log(res.data.content.records);
+						this.tableData = res.data.content.records;
+					});
+				},
+				handleCurrentChange(currentPage){
+					this.pagination.currentPage =currentPage;
+					this.getAll();
+				},
+				//弹出添加窗口
+				handleAdd() {
+					this.insertFormVisible = true;
+					this.resetForm();
+				},
+				//重置表单
+				resetForm(){
+					this.formData={};
+				},
+				//取消
+				cancel() {
+					this.insertFormVisible=false;
+					this.resetForm();
+					this.$message.info("取消新增");
+				},
+				formDataPic(file, fileList){
+					console.log("file", file);
+					this.formData.pic = file;
+				},
+				save(){
+
+					console.log("formData", this.formData);
+					// axios.post("/place",this.formData).then(res=>{
+					//
+					// 	this.$message.info(res.data.msg);
+					// }).finally(()=>{
+					// 	this.insertFormVisible = false;
+					// 	this.getAll();
+					// });
+				},
+
+				handleRemove(file, fileList) {
+					console.log(file, fileList);
+				},
+				handlePictureCardPreview(file) {
+					this.dialogImageUrl = file.url;
+					this.dialogVisible = true;
+				},
+
+				handleClick(row) {
+					console.log(row);
+				},
+				handleSizeChange(val) {
+					console.log(`每页 ${val} 条`);
+				},
+				// handleCurrentChange(val) {
+				// 	console.log(`当前页: ${val}`);
+				// },
+				del() { //删除
+					this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+						confirmButtonText: '确定',
+						cancelButtonText: '取消',
+						type: 'warning'
+					}).then(() => {
+						this.$message({
+							type: 'success',
+							message: '删除成功!'
+						});
+					}).catch(() => {
+						this.$message({
+							type: 'info',
+							message: '已取消删除'
+						});
+					});
+				}
+
+			}
+		})
+	</script>
+</html>

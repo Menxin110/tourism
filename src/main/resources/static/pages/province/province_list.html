@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>省份管理</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<!--		<script src="../../lib/jquery-3.4.1/jquery-3.4.1.js"></script>-->
+		<link rel="stylesheet" href="../../lib/element2.13.0/lib-master/theme-chalk/index.css" />
+		<script src="../../lib/vue/vue.js" type="text/javascript" charset="utf-8"></script>
+<!--		<script src="../lib/layer/layer.js"></script>-->
+		<script src="../../lib/element2.13.0/lib-master/index.js"></script>
+		<script src="../../lib/axios/dist/axios.js"></script>
+	</head>
+	<body>
+		<div id="table">
+			<el-card class="box-card">
+				<el-button type="success" plain @click="handleAdd()">新增省份</el-button>
+				<template>
+					<el-table :data="tableData" height="450" border style="width: 100%">
+<!--						<el-table-column type="index" label="省份" align="center" width="50">-->
+<!--						</el-table-column>-->
+						<el-table-column prop="name" label="省份" align="center" width="100">
+						</el-table-column>
+						<el-table-column prop="tags" label="标签" aligin="center" width="500">
+						</el-table-column>
+						<el-table-column prop="placeCounts" label="景点数" aligin="center">
+						</el-table-column>
+						<el-table-column fixed="right" align="center" label="操作" width="200">
+							<template slot-scope="scope">
+								<!-- <el-button @click="handleClick(scope.row)" type="primary" size="mini">查看</el-button> -->
+								<!-- <el-button type="success" size="mini">编辑</el-button> -->
+								<!-- <el-button @click="del" type="text" size="small">删除</el-button> -->
+								<el-button type="primary" @click="dialogTableVisible = true" icon="el-icon-view" circle size="mini"></el-button>
+								<el-button type="success" icon="el-icon-edit" circle size="mini" @click="updateEmployee(scope.row)"></el-button>
+								<el-button type="danger" icon="el-icon-delete" circle size="mini" @click="deleteEmployee(scope.row)"></el-button>
+							</template>
+						</el-table-column>
+					</el-table>
+				</template>
+
+				<!-- 分页 -->
+				<div class="block" style="margin-top: 20px;">
+<!--					:page-sizes="[100, 200, 300, 400]"-->
+					<el-pagination
+							class="pagiantion"
+
+							:page-sizes="[100, 200, 300, 400]"
+							background @size-change="handleSizeChange"
+							@current-change="handleCurrentChange"
+						    :current-page="pagination.currentPage"
+						    :page-size="pagination.pageSize"
+						    layout="total, prev, pager, next, jumper"
+						    :total="pagination.total"
+						>
+
+					</el-pagination>
+				</div>
+			</el-card>
+
+			<!-- 弹窗 -->
+			<el-dialog title="收货地址" :visible.sync="dialogTableVisible">
+				<el-table :data="tableData">
+					<el-table-column property="name" label="日期" width="150"></el-table-column>
+					<el-table-column property="placeCounts" label="景点数" width="200"></el-table-column>
+					<el-table-column property="address" label="地址"></el-table-column>
+				</el-table>
+			</el-dialog>
+
+			<!-- 新增标签弹层 -->
+			<div class="add-form">
+				<el-dialog title="新增省份" :visible.sync="insertFormVisible">
+					<el-form ref="dataAddForm" :model="formData" :rules="rules" label-position="right"
+							 label-width="100px">
+
+						<el-row>
+							<el-col :span="36">
+								<el-form-item label="省份" prop="name">
+									<el-input v-model="formData.name" placeholder="请输入省份"></el-input>
+								</el-form-item>
+
+							</el-col>
+						</el-row>
+
+						<el-row>
+							<el-col :span="60">
+								<el-form-item label="标签" prop="tags">
+									<el-input
+											type="textarea"
+											:rows="2"
+											placeholder="请输入相关身份内容"
+											v-model="formData.tags">
+									</el-input>
+								</el-form-item>
+							</el-col>
+						</el-row>
+					</el-form>
+
+					<div slot="footer" class="dialog-footer">
+						<el-button @click="cancel()">取消</el-button>
+						<el-button type="primary" @click="save()">确定</el-button>
+					</div>
+				</el-dialog>
+			</div>
+
+			<!-- 新增修改弹层 -->
+			<div class="add-form">
+				<el-dialog title="新增省份" :visible.sync="updateFormVisible">
+					<el-form ref="dataAddForm" :model="formData" :rules="rules" label-position="right"
+							 label-width="100px">
+
+						<el-row>
+							<el-col :span="36">
+								<el-form-item label="省份" prop="name">
+									<el-input v-model="formData.name" placeholder="请输入省份"></el-input>
+								</el-form-item>
+
+							</el-col>
+						</el-row>
+
+						<el-row>
+							<el-col :span="60">
+								<el-form-item label="标签" prop="tags">
+									<el-input
+											type="textarea"
+											:rows="2"
+											placeholder="请输入相关身份内容"
+											v-model="formData.tags">
+									</el-input>
+								</el-form-item>
+							</el-col>
+						</el-row>
+					</el-form>
+
+					<div slot="footer" class="dialog-footer">
+						<el-button @click="cancelUpdate()">取消</el-button>
+						<el-button type="primary" @click="updateRow()">确定</el-button>
+					</div>
+				</el-dialog>
+			</div>
+
+		</div>
+	</body>
+	<script>
+		var dataListCopy;
+		var vm = new Vue({
+			el: "#table",
+			data: {
+				currentPage: 1,
+				dialogTableVisible: false,
+				insertFormVisible: false,//添加表单是否可见
+				updateFormVisible: false,//编辑表单是否可见
+				formData: {},
+				tableData: [{
+						date: '2016-05-03',
+						name: '王小虎',
+						address: '上海市普陀区金沙江路 1518 弄'
+					}
+				],
+				pagination: {//分页相关模型数据
+					currentPage: 1,//当前页码
+					pageSize: 4,//每页显示的记录数
+					total: 0,//总记录数
+					name: "",
+					tags: "",
+					placeCounts: "",
+				},
+			},
+			//钩子函数，VUE对象初始化完成后自动执行
+			created() {
+				this.getAll();
+			},
+			methods: {
+				//列表
+				getAll() {
+					//组织参数，拼接url请求地址
+					// param = "?id=" + this.pagination.id+ "&name=" + this.pagination.name+"&phone="+this.pagination.phone;
+					axios.get("/province/page?pageNum=" + this.pagination.currentPage + "&pageSize=" + this.pagination.pageSize).then((res)=>{
+						console.log(res);
+
+						this.pagination.pageSize = res.data.content.size;
+						this.pagination.currentPage = res.data.content.current;
+						this.pagination.total = res.data.content.total;
+						console.log(res.data.content.records);
+						this.tableData = res.data.content.records;
+					});
+				},
+				handleCurrentChange(currentPage){
+					this.pagination.currentPage =currentPage;
+					this.getAll();
+				},
+				//弹出添加窗口
+				handleAdd() {
+					this.insertFormVisible = true;
+					this.resetForm();
+				},
+				//重置表单
+				resetForm(){
+					this.formData={};
+				},
+				//取消
+				cancel() {
+					this.insertFormVisible=false;
+					this.resetForm();
+					this.$message.info("取消新增");
+				},
+				save(){
+					axios.post("/province",this.formData).then(res=>{
+
+						this.$message.info(res.data.msg);
+					}).finally(()=>{
+						this.insertFormVisible = false;
+						this.getAll();
+					});
+				},
+				// 回显要修改的数据
+				updateEmployee(row){
+					//保存未修改时的列表数据
+					dataListCopy = JSON.parse(JSON.stringify(this.tableData));
+					console.log("dataListCopy", dataListCopy);
+
+					console.log(row, "执行修改操作");
+					this.updateFormVisible = true;
+					this.formData = row;
+				},
+				// 执行修改操作
+				updateRow(){
+					axios.put("/province", this.formData).then(res => {
+						console.log(res, "已完成后台操作");
+
+						this.$message.info(res.data.msg);
+					}).finally(() => {
+						this.updateFormVisible = false;
+						this.getAll();
+					});
+				},
+				// 取消修改
+				cancelUpdate() {
+					this.updateFormVisible = false;
+					this.$message.info("取消修改操作");
+
+					console.log("dataListCopy", dataListCopy);
+					this.tableData = dataListCopy;
+					dataListCopy = [];
+				},
+				// 删除一条数据
+				deleteEmployee(row){
+					this.$confirm("此操作将永久删除" + row.name + "，是否继续？", "删除提示", {
+						type:"warning"
+					}).then(res => {
+						axios.delete("/province/" + row.id).then(res => {
+							this.$message.info(res.data.msg);
+							console.log(res.data.msg);
+						}).finally(() => {
+							// this.insertFormVisible = false;
+							this.getAll();
+						});
+					}).catch(() => {
+						this.$message.info("取消删除操作");
+					});
+				},
+
+
+				handleClick(row) {
+					console.log(row);
+				},
+				handleSizeChange(val) {
+					console.log(`每页 ${val} 条`);
+				},
+				// handleCurrentChange(val) {
+				// 	console.log(`当前页: ${val}`);
+				// },
+				del() { //删除
+					this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+						confirmButtonText: '确定',
+						cancelButtonText: '取消',
+						type: 'warning'
+					}).then(() => {
+						this.$message({
+							type: 'success',
+							message: '删除成功!'
+						});
+					}).catch(() => {
+						this.$message({
+							type: 'info',
+							message: '已取消删除'
+						});
+					});
+				}
+
+			}
+		})
+	</script>
+</html>
